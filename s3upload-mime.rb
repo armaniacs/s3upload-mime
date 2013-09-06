@@ -44,6 +44,9 @@ local_dir = File.absolute_path(ARGV[0])
 if ARGV[1] =~ /^s3:\/\/((\w|\.|-){3,63})\/((\w|\.|-|\/)+)$/
   s3_bucketname = $1
   s3_dirname = $3
+elsif ARGV[1] =~ /^s3:\/\/((\w|\.|-){3,63})\/$/
+  s3_bucketname = $1
+  s3_dirname = ''
 end
 
 AWS.config({
@@ -53,15 +56,15 @@ AWS.config({
 s3 = AWS::S3.new
 
 cs = {
-  'db_local_list' => DBM.open("#{local_dir}/local", 0600, DBM::WRCREAT),
-  'db_local_new' => DBM.open("#{local_dir}/localnew", 0600, DBM::NEWDB),
+  'db_local_list' => DBM.open("#{local_dir}/.s3upload-mime-local", 0600, DBM::WRCREAT),
+  'db_local_new' => DBM.open("#{local_dir}/.s3upload-mime-localnew", 0600, DBM::NEWDB),
 
-  'db_local_tbu' => DBM.open("#{local_dir}/localtbu", 0600, DBM::NEWDB), # to be upload
-  'db_local_only' => DBM.open("#{local_dir}/localonly", 0600, DBM::NEWDB),
+  'db_local_tbu' => DBM.open("#{local_dir}/.s3upload-mime-localtbu", 0600, DBM::NEWDB), # to be upload
+  'db_local_only' => DBM.open("#{local_dir}/.s3upload-mime-localonly", 0600, DBM::NEWDB),
   'local_dir' => local_dir,
 
-  'db_s3_list' => DBM.open("#{local_dir}/s3", 0600, DBM::WRCREAT),
-  'db_s3_new' => DBM.open("#{local_dir}/s3new", 0600, DBM::NEWDB),
+  'db_s3_list' => DBM.open("#{local_dir}/.s3upload-mime", 0600, DBM::WRCREAT),
+  'db_s3_new' => DBM.open("#{local_dir}/.s3upload-mime-new", 0600, DBM::NEWDB),
   'bucket' => s3.buckets[s3_bucketname],
   's3_dir' => s3_dirname,
   'custom_mime_type' => {'.PBP' => 'application/x-psp-update'},

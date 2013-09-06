@@ -1,0 +1,10 @@
+2013-09-06  ARAKI Yasuhiro  <ar@debian.org>
+
+	* s3upload-mime.rb : Change temporarry filenames.
+
+	Following six files are made in.
+	
+	.s3upload-mime-local.db      .s3upload-mime-localtbu.db
+	.s3upload-mime-localnew.db   .s3upload-mime-new.db
+	.s3upload-mime-localonly.db  .s3upload-mime.db
+
