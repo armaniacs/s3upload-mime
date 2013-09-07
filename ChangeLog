@@ -1,3 +1,7 @@
+2013-09-07  ARAKI Yasuhiro  <ar@debian.org>
+
+	* s3upload-mime.rb: Change to use "optparse".
+
 2013-09-06  ARAKI Yasuhiro  <ar@debian.org>
 
 	* s3upload-mime.rb : Change temporarry filenames.

@@ -7,36 +7,72 @@ require 'digest/md5'
 require 'find'
 require 'dbm'
 require 'mime/types'
+require 'optparse'
+require 'ostruct'
 
-def help
-  puts "*** This codes are released under the Apache licence verion 2.0. ***"
-  puts ""
-  puts "This program upload files in local directory and subdirectory to s3."
-  puts "For over 10MB file, it automatically uploads in multipart mode."
-  puts ""
-  puts "Notes:"
-  puts "  Local file modification is detected by MD5 calculation."
-  puts "  *.db files are created for management of files."
-  puts ""
-  puts ""
-  puts "  Mime-Types are automatically attached by suffix of filename at almost filenames."
-  puts "  You can modify custom_mime_type hash in this file."
-  puts ""
-  puts "Before use:"
-  puts "  Please set 'AWS_ACCESS_KEY_ID' and 'AWS_SECRET_ACCESS_KEY' in ENV. "
-  puts ""
-  puts "Usage example:\n  ruby #{__FILE__} local_directory_path s3://bucketname/folder/ "
-end
+class OptparseExample
+  def self.parse(args)
+    # The options specified on the command line will be collected in *options*.
+    # We set default values here.
+    options = OpenStruct.new
+    options.library = []
+    options.inplace = false
+    options.encoding = "utf8"
+    options.transfer_type = :auto
+    options.verbose = false
+
+    opt_parser = OptionParser.new do |opts|
+      opts.banner = "Usage: s3upload-mime.rb source_dir s3://bucket/folder/ [options]"
+
+      opts.separator ""
+      opts.separator "Specific options:"
+
+      # Optional argument; multi-line description.
+      opts.on("-r", "--region [S3-endpoints]", String,
+              "example: s3-ap-northeast-1.amazonaws.com") do |ext|
+        options.inplace = true
+        options.s3endpoint = ext || ''
+      end
+
+      # Boolean switch.
+      opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
+        options.verbose = v
+      end
+
+      opts.separator ""
+      opts.separator "Common options:"
+
+      # No argument, shows at tail.  This will print an options summary.
+      # Try it and see!
+      opts.on_tail("-h", "--help", "Show this message") do
+        puts opts
+        exit
+      end
+
+      # Another typical switch to print the version.
+      opts.on_tail("--version", "Show version") do
+        puts OptionParser::Version.join('.')
+        exit
+      end
+    end
+
+    opt_parser.parse!(args)
+    options
+
+  end  # parse()
+
+end  # class OptparseExample
+
+options = OptparseExample.parse(ARGV)
 
 unless ARGV[0]
-  help
+  puts "Error: set local directory path and target."  
   exit 1
 end
 
 # local
 unless File.directory?(ARGV[0])
   puts "Error: set local directory path"
-  help
   exit 1
 end
 local_dir = File.absolute_path(ARGV[0])
@@ -49,9 +85,16 @@ elsif ARGV[1] =~ /^s3:\/\/((\w|\.|-){3,63})\/$/
   s3_dirname = ''
 end
 
+if s3_dirname =~ /\S+\/$/
+  puts "slashed"
+else
+  s3_dirname += '/'
+end
+
 AWS.config({
   :access_key_id => ENV['AWS_ACCESS_KEY_ID'],
-  :secret_access_key => ENV['AWS_SECRET_ACCESS_KEY']
+  :secret_access_key => ENV['AWS_SECRET_ACCESS_KEY'],
+  :s3_endpoint => options.s3endpoint
 })
 s3 = AWS::S3.new
 
@@ -83,15 +126,15 @@ def local_list_update(cs)
     if File.directory?(f) or File.extname(f) == '.db' or f =~/(~|\.orig|\.bak|\.\d+)$/
       next
     end
-    f.gsub!(/^#{cs['local_dir']}\//,'')
+    flist = f.gsub(/^#{cs['local_dir']}\//,'')
 
-    if db_local_list[f] && db_local_list[f] != File.mtime(f).to_s
-      db_local_list[f] = File.mtime(f)
-      db_local_new[f] = db_local_list[f]
+    if db_local_list[flist] && db_local_list[flist] != File.mtime(f).to_s
+      db_local_list[flist] = File.mtime(f)
+      db_local_new[flist] = db_local_list[flist]
     end
-    unless db_local_list[f]
-      db_local_list[f] = File.mtime(f)
-      db_local_new[f] = db_local_list[f]
+    unless db_local_list[flist]
+      db_local_list[flist] = File.mtime(f)
+      db_local_new[flist] = db_local_list[flist]
     end
   end
 end
