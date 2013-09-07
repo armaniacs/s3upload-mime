@@ -24,4 +24,4 @@ Please set 'AWS_ACCESS_KEY_ID' and 'AWS_SECRET_ACCESS_KEY' in ENV.
 
 Usage example
 ------------------
-ruby s3upload-mime.rb local_directory_path s3://bucketname/folder/ 
+ruby s3upload-mime.rb local_directory_path s3://bucketname/folder/ -r s3-ap-northeast-1.amazonaws.com
